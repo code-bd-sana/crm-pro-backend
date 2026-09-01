@@ -11,6 +11,8 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
+import { TokenResponseDto } from './dto/token-response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
@@ -29,7 +31,7 @@ export class AuthController {
   @Public()
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
-  @ApiResponse({ status: 201, description: 'Registration successful' })
+  @ApiResponse({ status: 201, description: 'Registration successful', type: User })
   @ApiResponse({ status: 409, description: 'Email already in use' })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
@@ -39,7 +41,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'Login successful, returns tokens' })
+  @ApiResponse({ status: 200, description: 'Login successful, returns tokens', type: LoginResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -48,7 +50,7 @@ export class AuthController {
   @Public()
   @Post('refresh-tokens')
   @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed', type: TokenResponseDto })
   refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshTokenDto.refreshToken);
   }

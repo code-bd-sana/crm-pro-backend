@@ -21,6 +21,8 @@ import { QueryInvoiceDto } from './dto/query-invoice.dto';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../shared/enums/permissions.enum';
+import { Invoice } from './entities/invoice.entity';
+import { Payment } from './entities/payment.entity';
 
 @ApiTags('Invoices & Billing')
 @ApiBearerAuth()
@@ -31,7 +33,7 @@ export class InvoicesController {
   @Post()
   @RequirePermissions(Permission.INVOICES_CREATE)
   @ApiOperation({ summary: 'Create a new invoice with line items' })
-  @ApiResponse({ status: 201, description: 'Invoice created successfully.' })
+  @ApiResponse({ status: 201, description: 'Invoice created successfully.', type: Invoice })
   create(@Body() dto: CreateInvoiceDto) {
     return this.invoicesService.create(dto);
   }
@@ -39,7 +41,7 @@ export class InvoicesController {
   @Get()
   @RequirePermissions(Permission.INVOICES_READ)
   @ApiOperation({ summary: 'List invoices with pagination and filters' })
-  @ApiResponse({ status: 200, description: 'Invoices retrieved successfully.' })
+  @ApiResponse({ status: 200, description: 'Invoices retrieved successfully.', type: [Invoice] })
   findAll(@Query() query: QueryInvoiceDto) {
     return this.invoicesService.findAll(query);
   }
@@ -47,7 +49,7 @@ export class InvoicesController {
   @Get(':id')
   @RequirePermissions(Permission.INVOICES_READ)
   @ApiOperation({ summary: 'Get full invoice details (Hydrated response for PDF generation)' })
-  @ApiResponse({ status: 200, description: 'Invoice with client, project, items, and payments retrieved.' })
+  @ApiResponse({ status: 200, description: 'Invoice with client, project, items, and payments retrieved.', type: Invoice })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.invoicesService.findOne(id);
   }
@@ -55,7 +57,7 @@ export class InvoicesController {
   @Patch(':id')
   @RequirePermissions(Permission.INVOICES_UPDATE)
   @ApiOperation({ summary: 'Update basic invoice details or status' })
-  @ApiResponse({ status: 200, description: 'Invoice updated successfully.' })
+  @ApiResponse({ status: 200, description: 'Invoice updated successfully.', type: Invoice })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateInvoiceDto,
@@ -66,7 +68,7 @@ export class InvoicesController {
   @Post(':id/payments')
   @RequirePermissions(Permission.INVOICES_UPDATE)
   @ApiOperation({ summary: 'Add a payment to an invoice (Auto-calculates balance)' })
-  @ApiResponse({ status: 201, description: 'Payment recorded successfully.' })
+  @ApiResponse({ status: 201, description: 'Payment recorded successfully.', type: Invoice })
   addPayment(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CreatePaymentDto,

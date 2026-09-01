@@ -14,6 +14,7 @@ import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../shared/enums/permissions.enum';
+import { Department } from './entities/department.entity';
 
 @ApiTags('Departments (Team)')
 @ApiBearerAuth()
@@ -24,7 +25,7 @@ export class DepartmentsController {
   @Post()
   @RequirePermissions(Permission.DEPARTMENTS_CREATE)
   @ApiOperation({ summary: 'Create a new department' })
-  @ApiResponse({ status: 201, description: 'Department created.' })
+  @ApiResponse({ status: 201, description: 'Department created.', type: Department })
   create(@Body() createDepartmentDto: CreateDepartmentDto) {
     return this.departmentsService.create(createDepartmentDto);
   }
@@ -32,7 +33,7 @@ export class DepartmentsController {
   @Get()
   @RequirePermissions(Permission.DEPARTMENTS_READ)
   @ApiOperation({ summary: 'Get all departments' })
-  @ApiResponse({ status: 200, description: 'Return all departments.' })
+  @ApiResponse({ status: 200, description: 'Return all departments.', type: [Department] })
   findAll() {
     return this.departmentsService.findAll();
   }
@@ -40,7 +41,7 @@ export class DepartmentsController {
   @Get(':id')
   @RequirePermissions(Permission.DEPARTMENTS_READ)
   @ApiOperation({ summary: 'Get a single department' })
-  @ApiResponse({ status: 200, description: 'Return single department.' })
+  @ApiResponse({ status: 200, description: 'Return single department.', type: Department })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.departmentsService.findOne(id);
   }
@@ -48,7 +49,7 @@ export class DepartmentsController {
   @Patch(':id')
   @RequirePermissions(Permission.DEPARTMENTS_UPDATE)
   @ApiOperation({ summary: 'Update a department' })
-  @ApiResponse({ status: 200, description: 'Department updated.' })
+  @ApiResponse({ status: 200, description: 'Department updated.', type: Department })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDepartmentDto: UpdateDepartmentDto,
