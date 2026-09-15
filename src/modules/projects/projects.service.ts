@@ -14,6 +14,8 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { QueryProjectDto } from './dto/query-project.dto';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
 import { UpdateMilestoneDto } from './dto/update-milestone.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType, ResourceType } from '../../shared/enums/notification.enum';
 
 @Injectable()
 export class ProjectsService {
@@ -26,6 +28,7 @@ export class ProjectsService {
     private readonly clientRepository: Repository<Client>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: CreateProjectDto): Promise<Project> {
@@ -54,7 +57,21 @@ export class ProjectsService {
       members,
     });
 
-    return this.projectRepository.save(project);
+    const savedProject = await this.projectRepository.save(project);
+
+    // Notify members they were added to the project
+    members.forEach((member) => {
+      this.eventEmitter.emit('notification.send', {
+        userId: member.id,
+        title: 'Added to Project',
+        message: `You have been added to project "${savedProject.title}"`,
+        type: NotificationType.PROJECT_MEMBER_ADDED,
+        resourceType: ResourceType.PROJECT,
+        resourceId: savedProject.id,
+      });
+    });
+
+    return savedProject;
   }
 
   async findAll(query: QueryProjectDto) {

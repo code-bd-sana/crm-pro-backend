@@ -61,6 +61,12 @@ export class NotificationsService {
     return this.notificationRepository.save(notification);
   }
 
+  async getUnreadCount(userId: string): Promise<number> {
+    return this.notificationRepository.count({
+      where: { user: { id: userId }, isRead: false },
+    });
+  }
+
   async markAllAsRead(userId: string): Promise<{ message: string }> {
     await this.notificationRepository.update(
       { user: { id: userId }, isRead: false },

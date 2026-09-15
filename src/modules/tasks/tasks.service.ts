@@ -217,7 +217,7 @@ export class TasksService {
   async addComment(taskId: string, userId: string, dto: CreateCommentDto): Promise<TaskComment> {
     const task = await this.findOne(taskId);
     const user = await this.userRepository.findOneBy({ id: userId });
-    
+
     if (!user) throw new NotFoundException('User not found.');
 
     const comment = this.commentRepository.create({
@@ -225,7 +225,21 @@ export class TasksService {
       task,
       user,
     });
-    return this.commentRepository.save(comment);
+    const savedComment = await this.commentRepository.save(comment);
+
+    // Notify task assignee about new comment (if not the commenter themselves)
+    if (task.assignee && task.assignee.id !== userId) {
+      this.eventEmitter.emit('notification.send', {
+        userId: task.assignee.id,
+        title: 'New Comment on Task',
+        message: `${user.profile?.firstName ?? 'Someone'} commented on "${task.title}"`,
+        type: NotificationType.TASK_ASSIGNED,
+        resourceType: ResourceType.TASK,
+        resourceId: task.id,
+      });
+    }
+
+    return savedComment;
   }
 
   async deleteComment(taskId: string, commentId: string, userId: string): Promise<{ message: string }> {

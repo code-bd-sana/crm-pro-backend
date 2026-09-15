@@ -19,6 +19,13 @@ export class NotificationsController {
     return this.notificationsService.getUserNotifications(user.id);
   }
 
+  @Get('unread-count')
+  @ApiOperation({ summary: 'Get unread notification count for current user' })
+  @ApiResponse({ status: 200, description: 'Returns unread count.' })
+  getUnreadCount(@CurrentUser() user: User) {
+    return this.notificationsService.getUnreadCount(user.id);
+  }
+
   @Patch('mark-all-read')
   @ApiOperation({ summary: 'Mark all notifications as read' })
   @ApiResponse({ status: 200, description: 'All notifications marked as read.', type: MessageResponseDto })
