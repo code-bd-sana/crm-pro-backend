@@ -116,7 +116,6 @@ export class AuthService {
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({ where: { email }, relations: { profile: true } });
-    console.log('user===>', user);
     if (!user) {
       return { message: 'If an account with that email exists, we have sent a password reset link.' };
     }
@@ -127,9 +126,8 @@ export class AuthService {
     const expirationDate = new Date();
     expirationDate.setHours(expirationDate.getHours() + 1);
 
-    user.resetPasswordToken = hashedToken;
+    user.resetPasswordToken = hashedToke
     user.resetPasswordExpires = expirationDate;
-    console.log('user 2===>', user);
     await this.userRepository.save(user);
 
     const firstName = user.profile?.firstName || 'User';
