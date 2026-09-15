@@ -126,8 +126,9 @@ export class AuthService {
     const expirationDate = new Date();
     expirationDate.setHours(expirationDate.getHours() + 1);
 
-    user.resetPasswordToken = hashedToke
+    user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = expirationDate;
+
     await this.userRepository.save(user);
 
     const firstName = user.profile?.firstName || 'User';
