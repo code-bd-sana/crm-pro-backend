@@ -6,12 +6,19 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { User } from './entities/user.entity';
 import { UserProfile } from './entities/user-profile.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Department } from '../departments/entities/department.entity';
 import { Role } from '../roles/entities/role.entity';
+import { MailService } from '../../shared/mail/mail.service';
+
+export interface CreateUserResult {
+  user: User;
+  temporaryPassword?: string;
+}
 
 @Injectable()
 export class UsersService {
@@ -23,15 +30,28 @@ export class UsersService {
     @InjectRepository(Role)
     private readonly roleRepository: Repository<Role>,
     private readonly dataSource: DataSource,
+    private readonly mailService: MailService,
   ) {}
 
-  async create(dto: CreateUserDto): Promise<User> {
+  private generateTemporaryPassword(): string {
+    return crypto.randomBytes(4).toString('hex').toUpperCase();
+  }
+
+  async create(dto: CreateUserDto): Promise<CreateUserResult> {
     const existing = await this.userRepository.findOneBy({ email: dto.email });
     if (existing) {
       throw new ConflictException('Email already in use');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 12);
+    let plainPassword: string | undefined;
+    let hashedPassword: string;
+
+    if (dto.password) {
+      hashedPassword = await bcrypt.hash(dto.password, 12);
+    } else {
+      plainPassword = this.generateTemporaryPassword();
+      hashedPassword = await bcrypt.hash(plainPassword, 12);
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -67,7 +87,18 @@ export class UsersService {
       const savedUser = await queryRunner.manager.save(User, user) as User;
       await queryRunner.commitTransaction();
 
-      return this.findOne(savedUser.id);
+      const hydratedUser = await this.findOne(savedUser.id);
+
+      // Send welcome email with temporary password (fire-and-forget)
+      if (plainPassword) {
+        const fullName = `${dto.firstName} ${dto.lastName}`;
+        this.mailService.sendWelcomeEmail(dto.email, fullName, plainPassword);
+      }
+
+      return {
+        user: hydratedUser,
+        ...(plainPassword && { temporaryPassword: plainPassword }),
+      };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

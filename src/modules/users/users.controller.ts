@@ -9,12 +9,17 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UsersService } from './users.service';
+import { UsersService, CreateUserResult } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
 import { Permission } from '../../shared/enums/permissions.enum';
 import { User } from './entities/user.entity';
+
+class CreateUserResponse {
+  success: boolean;
+  data: CreateUserResult;
+}
 
 @ApiTags('Users (Team)')
 @ApiBearerAuth()
@@ -25,9 +30,13 @@ export class UsersController {
   @Post()
   @RequirePermissions(Permission.TEAM_CREATE)
   @ApiOperation({ summary: 'Create a new user (Team Member)' })
-  @ApiResponse({ status: 201, description: 'User created successfully.', type: User })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @ApiResponse({ status: 201, description: 'User created successfully.', type: CreateUserResponse })
+  async create(@Body() createUserDto: CreateUserDto) {
+    const result = await this.usersService.create(createUserDto);
+    return {
+      success: true,
+      data: result,
+    };
   }
 
   @Get()
