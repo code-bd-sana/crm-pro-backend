@@ -47,7 +47,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @RequirePermissions(Permission.TEAM_CREATE) // Reusing create permission for update
+  @RequirePermissions(Permission.TEAM_UPDATE)
   @ApiOperation({ summary: 'Update a user profile or roles' })
   @ApiResponse({ status: 200, description: 'User updated successfully.', type: User })
   update(
@@ -58,7 +58,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @RequirePermissions(Permission.TEAM_CREATE) // Only admins can delete
+  @RequirePermissions(Permission.TEAM_DELETE)
   @ApiOperation({ summary: 'Delete a user' })
   @ApiResponse({ status: 200, description: 'User deleted.' })
   remove(@Param('id', ParseUUIDPipe) id: string) {

@@ -157,7 +157,7 @@ export class InvoicesService {
     const invoice = await this.invoiceRepository.findOne({
       where: { id },
       relations: {
-        client: true,
+        client: { user: true },
         project: true,
         items: true,
         payments: true,
@@ -187,30 +187,35 @@ export class InvoicesService {
 
     const savedPayment = await this.paymentRepository.save(payment);
 
-    // Update invoice balance and status
+    // Update invoice balance and status.
+    // NOTE: invoice.payments is a stale loaded collection here — saving the
+    // hydrated entity would null the FK of any payment missing from it, so
+    // update only the scalar columns instead.
     const newAmountPaid = Number(invoice.amountPaid) + Number(dto.amount);
     const newBalanceDue = Number(invoice.totalAmount) - newAmountPaid;
 
-    invoice.amountPaid = newAmountPaid;
-    invoice.balanceDue = newBalanceDue < 0 ? 0 : newBalanceDue;
+    const updates: Partial<Invoice> = {
+      amountPaid: newAmountPaid,
+      balanceDue: newBalanceDue < 0 ? 0 : newBalanceDue,
+    };
 
-    if (invoice.balanceDue <= 0) {
-      invoice.status = InvoiceStatus.PAID;
+    if (newBalanceDue <= 0) {
+      updates.status = InvoiceStatus.PAID;
 
       // Emit event for invoice paid
       this.eventEmitter.emit('notification.send', {
-        userId: invoice.client?.user?.id || null, 
+        userId: invoice.client?.user?.id || null,
         title: 'Invoice Paid',
         message: `Invoice ${invoice.invoiceNumber} has been fully paid.`,
         type: NotificationType.INVOICE_PAID,
         resourceType: ResourceType.INVOICE,
         resourceId: invoice.id,
       });
-    } else if (invoice.balanceDue > 0 && newAmountPaid > 0) {
-      invoice.status = InvoiceStatus.PARTIALLY_PAID;
+    } else if (newAmountPaid > 0) {
+      updates.status = InvoiceStatus.PARTIALLY_PAID;
     }
 
-    await this.invoiceRepository.save(invoice);
+    await this.invoiceRepository.update(invoice.id, updates);
 
     return savedPayment;
   }

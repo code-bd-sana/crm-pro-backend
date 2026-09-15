@@ -34,6 +34,8 @@ const SYSTEM_PERMISSIONS: { slug: string; module: string; description: string }[
   // Team
   { slug: PermissionEnum.TEAM_READ, module: 'team', description: 'View team members' },
   { slug: PermissionEnum.TEAM_CREATE, module: 'team', description: 'Add team members' },
+  { slug: PermissionEnum.TEAM_UPDATE, module: 'team', description: 'Update team members' },
+  { slug: PermissionEnum.TEAM_DELETE, module: 'team', description: 'Delete team members' },
   // Departments
   { slug: PermissionEnum.DEPARTMENTS_READ, module: 'departments', description: 'View departments' },
   { slug: PermissionEnum.DEPARTMENTS_CREATE, module: 'departments', description: 'Create departments' },
@@ -136,11 +138,23 @@ export class DatabaseSeederService implements OnApplicationBootstrap {
     ];
 
     for (const def of defaults) {
-      const exists = await this.roleRepository.findOne({
+      const existing = await this.roleRepository.findOne({
         where: { name: def.name },
+        relations: { permissions: true },
       });
-      if (!exists) {
+      if (!existing) {
         await this.roleRepository.save(this.roleRepository.create(def));
+      } else {
+        // Add any permissions introduced after the role was first seeded
+        const existingIds = new Set((existing.permissions ?? []).map((p) => p.id));
+        const missing = def.permissions.filter((p) => !existingIds.has(p.id));
+        if (missing.length > 0) {
+          existing.permissions = [...(existing.permissions ?? []), ...missing];
+          await this.roleRepository.save(existing);
+          this.logger.log(
+            `Role "${def.name}" updated with ${missing.length} new permission(s).`,
+          );
+        }
       }
     }
   }

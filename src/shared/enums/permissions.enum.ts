@@ -26,6 +26,8 @@ export const Permission = {
   // Team / Users
   TEAM_READ: 'team.read',
   TEAM_CREATE: 'team.create',
+  TEAM_UPDATE: 'team.update',
+  TEAM_DELETE: 'team.delete',
 
   // Departments
   DEPARTMENTS_READ: 'departments.read',
