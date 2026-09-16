@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { User } from './modules/users/entities/user.entity';
 import { UserProfile } from './modules/users/entities/user-profile.entity';
