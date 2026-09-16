@@ -24,21 +24,26 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: Profile,
     done: VerifyCallback,
   ): Promise<void> {
-    const { id, name, emails } = profile;
-    const email = emails?.[0]?.value;
+    try {
+      const { id, name, emails } = profile;
+      const email = emails?.[0]?.value;
 
-    if (!email) {
-      return done(new Error('No email returned from Google'));
+      if (!email) {
+        return done(new Error('No email returned from Google'));
+      }
+
+      const tokens = await this.authService.validateGoogleUser({
+        googleId: id,
+        email,
+        firstName: name?.givenName || '',
+        lastName: name?.familyName || '',
+      });
+
+      done(null, tokens);
+    } catch (error) {
+      console.error('Google OAuth validation failed:', error);
+      done(error as Error);
     }
-
-    const tokens = await this.authService.validateGoogleUser({
-      googleId: id,
-      email,
-      firstName: name?.givenName || '',
-      lastName: name?.familyName || '',
-    });
-
-    done(null, tokens);
   }
 }
 
